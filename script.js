@@ -405,31 +405,5 @@ watched.forEach((section) => spy.observe(section));
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
-function spawnSprinkle() {
-  const el = document.createElement("span");
-  el.className = "sprinkle";
-  el.style.left = `${Math.random() * 100}%`;
-  el.style.background = ["#ff8cd8", "#ffd166", "#ff9f1c", "#7ad7ff", "#c9a8ff", "#b8f26e", "#fff"][Math.floor(Math.random() * 7)];
-  el.style.animationDuration = `${4 + Math.random() * 5}s`;
-  el.style.transform = `rotate(${Math.random() * 180}deg)`;
-  document.getElementById("sprinkleLayer").appendChild(el);
-  el.addEventListener("animationend", () => el.remove());
-}
-function spawnBubble() {
-  const el = document.createElement("span");
-  el.className = "bubble";
-  const size = 10 + Math.random() * 22;
-  el.style.width = el.style.height = `${size}px`;
-  el.style.left = `${Math.random() * 100}%`;
-  el.style.animationDuration = `${8 + Math.random() * 10}s`;
-  document.getElementById("bubbleLayer").appendChild(el);
-  el.addEventListener("animationend", () => el.remove());
-}
-const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-if (motionOk) {
-  setInterval(spawnSprinkle, 380);
-  setInterval(spawnBubble, 1200);
-}
-
 renderCart();
 updateOrderTotal();
