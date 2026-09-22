@@ -297,10 +297,6 @@ toggle.addEventListener("click", () => {
   const open = nav.classList.toggle("is-open");
   toggle.setAttribute("aria-expanded", String(open));
 });
-nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
-  nav.classList.remove("is-open");
-  toggle.setAttribute("aria-expanded", "false");
-}));
 
 const header = document.querySelector(".site-header");
 function syncHeaderOffset() {
@@ -318,22 +314,51 @@ function revealSection(el) {
   });
 }
 
-function scrollToSection(el, behavior = "smooth") {
-  if (!el) return;
-  syncHeaderOffset();
-  revealSection(el);
-  const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-offset")) || header.offsetHeight + 12;
-  const y = Math.max(0, Math.round(window.scrollY + el.getBoundingClientRect().top - offset));
-  window.scrollTo({ top: y, behavior });
-}
-
-function goToHash(hash, behavior = "smooth") {
-  const id = (hash || "").replace("#", "");
-  if (!id || id === "top" || id === "main") {
-    window.scrollTo({ top: 0, behavior });
+function animateScroll(to) {
+  const from = window.scrollY;
+  const dist = to - from;
+  if (Math.abs(dist) < 2) return;
+  const prefersReduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReduce) {
+    window.scrollTo(0, to);
     return;
   }
-  scrollToSection(document.getElementById(id), behavior);
+  const dur = Math.min(620, Math.max(280, Math.abs(dist) * 0.22));
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    window.scrollTo(0, from + dist * eased);
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function scrollToSection(el) {
+  if (!el) return;
+  const offset = syncHeaderOffset();
+  revealSection(el);
+  const y = Math.max(0, Math.round(window.scrollY + el.getBoundingClientRect().top - offset));
+  animateScroll(y);
+}
+
+function goToHash(hash, instant) {
+  const id = (hash || "").replace("#", "");
+  if (!id || id === "top" || id === "main") {
+    if (instant) window.scrollTo(0, 0);
+    else animateScroll(0);
+    return;
+  }
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (instant) {
+    const offset = syncHeaderOffset();
+    revealSection(el);
+    const y = Math.max(0, Math.round(window.scrollY + el.getBoundingClientRect().top - offset));
+    window.scrollTo(0, y);
+    return;
+  }
+  scrollToSection(el);
 }
 
 document.querySelectorAll('a[href^="#"]').forEach((a) => {
@@ -341,22 +366,22 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     const href = a.getAttribute("href");
     if (!href || href === "#") return;
     e.preventDefault();
-    const run = () => {
+    const fromNav = nav.contains(a);
+    if (fromNav) {
+      nav.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
+    }
+    const delay = fromNav && window.matchMedia("(max-width: 860px)").matches ? 80 : 0;
+    setTimeout(() => {
       goToHash(href);
       history.pushState(null, "", href === "#top" ? location.pathname : href);
-    };
-    if (nav.classList.contains("is-open")) {
-      nav.classList.remove("is-open");
-      setTimeout(run, 50);
-    } else {
-      requestAnimationFrame(run);
-    }
+    }, delay);
   });
 });
 
 window.addEventListener("load", () => {
   syncHeaderOffset();
-  if (location.hash) goToHash(location.hash, "auto");
+  if (location.hash) goToHash(location.hash, true);
 });
 
 const navLinks = [...document.querySelectorAll(".nav-menu a[href^='#']")];
