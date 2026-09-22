@@ -22,10 +22,10 @@ const CAKES = [
 ];
 
 const TREATS = [
-  { title: "Cookies", img: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=700&q=80" },
-  { title: "Donuts", img: "https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=700&q=80" },
-  { title: "Breads", img: "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?auto=format&fit=crop&w=700&q=80" },
-  { title: "Pastries", img: "https://images.unsplash.com/photo-1509365465985-25d11c17e775?auto=format&fit=crop&w=700&q=80" },
+  { title: "Cookies", img: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=700&q=80" },
+  { title: "Donuts", img: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=700&q=80" },
+  { title: "Breads", img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=700&q=80" },
+  { title: "Pastries", img: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=700&q=80" },
   { title: "Gifts", img: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=700&q=80" }
 ];
 
@@ -268,7 +268,7 @@ const io = new IntersectionObserver((entries) => {
       io.unobserve(entry.target);
     }
   });
-}, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+}, { threshold: 0.08, rootMargin: "80px 0px -8px 0px" });
 document.querySelectorAll(".reveal, .reveal-left, .reveal-right, .reveal-zoom").forEach((el) => io.observe(el));
 
 const statIo = new IntersectionObserver((entries) => {
@@ -303,6 +303,16 @@ nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
 }));
 
 document.getElementById("year").textContent = new Date().getFullYear();
+
+document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  a.addEventListener("click", (e) => {
+    const id = a.getAttribute("href").slice(1);
+    const el = document.getElementById(id) || (id === "top" ? document.body : null);
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
 
 function spawnSprinkle() {
   const el = document.createElement("span");
