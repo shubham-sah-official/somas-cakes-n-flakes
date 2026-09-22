@@ -302,17 +302,83 @@ nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
   toggle.setAttribute("aria-expanded", "false");
 }));
 
-document.getElementById("year").textContent = new Date().getFullYear();
+const header = document.querySelector(".site-header");
+function syncHeaderOffset() {
+  const extra = 12;
+  const h = (header?.offsetHeight || 96) + extra;
+  document.documentElement.style.setProperty("--header-offset", `${h}px`);
+  return h;
+}
+syncHeaderOffset();
+window.addEventListener("resize", syncHeaderOffset);
+
+function revealSection(el) {
+  el.querySelectorAll(".reveal, .reveal-left, .reveal-right, .reveal-zoom").forEach((n) => {
+    n.classList.add("is-inview");
+  });
+}
+
+function scrollToSection(el, behavior = "smooth") {
+  if (!el) return;
+  syncHeaderOffset();
+  revealSection(el);
+  const offset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-offset")) || header.offsetHeight + 12;
+  const y = Math.max(0, Math.round(window.scrollY + el.getBoundingClientRect().top - offset));
+  window.scrollTo({ top: y, behavior });
+}
+
+function goToHash(hash, behavior = "smooth") {
+  const id = (hash || "").replace("#", "");
+  if (!id || id === "top" || id === "main") {
+    window.scrollTo({ top: 0, behavior });
+    return;
+  }
+  scrollToSection(document.getElementById(id), behavior);
+}
 
 document.querySelectorAll('a[href^="#"]').forEach((a) => {
   a.addEventListener("click", (e) => {
-    const id = a.getAttribute("href").slice(1);
-    const el = document.getElementById(id) || (id === "top" ? document.body : null);
-    if (!el) return;
+    const href = a.getAttribute("href");
+    if (!href || href === "#") return;
     e.preventDefault();
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const run = () => {
+      goToHash(href);
+      history.pushState(null, "", href === "#top" ? location.pathname : href);
+    };
+    if (nav.classList.contains("is-open")) {
+      nav.classList.remove("is-open");
+      setTimeout(run, 50);
+    } else {
+      requestAnimationFrame(run);
+    }
   });
 });
+
+window.addEventListener("load", () => {
+  syncHeaderOffset();
+  if (location.hash) goToHash(location.hash, "auto");
+});
+
+const navLinks = [...document.querySelectorAll(".nav-menu a[href^='#']")];
+const watched = navLinks
+  .map((link) => document.getElementById(link.getAttribute("href").slice(1)))
+  .filter(Boolean);
+
+const spy = new IntersectionObserver((entries) => {
+  const onScreen = entries
+    .filter((entry) => entry.isIntersecting)
+    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!onScreen) return;
+  navLinks.forEach((link) => {
+    link.classList.toggle("is-current", link.getAttribute("href") === `#${onScreen.target.id}`);
+  });
+}, {
+  rootMargin: "-22% 0px -58% 0px",
+  threshold: [0.12, 0.28, 0.5, 0.75]
+});
+watched.forEach((section) => spy.observe(section));
+
+document.getElementById("year").textContent = new Date().getFullYear();
 
 function spawnSprinkle() {
   const el = document.createElement("span");
